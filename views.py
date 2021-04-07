@@ -1,3 +1,6 @@
+import json
+
+
 def response(issue, data, status='ok'):
     return {
         'type': 'response',
@@ -33,7 +36,20 @@ class LiftApp:
         }
 
     def route(self, action):
-        return self.ROUTES.get(action)
+        return self._ROUTES.get(action)
 
-    def _auth_actor(action, data):
-        pass
+    async def entry_point(self, request, ws):
+        self.ws = ws
+
+        while True:
+            msg = await ws.recv()
+            data = json.loads(msg)
+
+            action = data['action']
+
+            handler = self.route(action)
+            print(handler)
+            await handler(action, data['data'])
+
+    async def _auth_actor(self, action, data):
+        await self.ws.send('hello from auth!')

@@ -1,19 +1,21 @@
+import sys
+
 from sanic import Sanic
 from sanic.response import json
 import asyncio
 
+from views import LiftApp
+
 app = Sanic("Lift app")
 
 
-@app.websocket('/ws')
-async def test(request, ws):
-    while True:
-        data = "hello!"
-        print("Sending: " + data)
-        await ws.send(data)
-        data = await ws.recv()
-        print("Received: " + data)
+def main():
+    lift_app = LiftApp()
+
+    app.add_websocket_route(lift_app.entry_point, '/ws')
+    app.run()
+
+    return 0
 
 if __name__ == '__main__':
-    app.run()
-    exit(0)
+    sys.exit(main())
