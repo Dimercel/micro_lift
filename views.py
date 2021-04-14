@@ -48,7 +48,6 @@ class LiftApp:
             action = data['action']
 
             handler = self.route(action)
-            print(handler)
             await handler(action, data['data'])
 
     async def _auth_actor(self, action, data):
