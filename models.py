@@ -15,6 +15,6 @@ class Lift(Schema):
 
 
 class Actor(Schema):
-    uid = fields.StrField(required=True)
+    uid = fields.Str(required=True)
     weight = fields.Float(required=True)
-    timestamp = fields.DateTimeField(ISO8601_FORMAT, default=lambda: dt.utcnow())
+    timestamp = fields.DateTime(ISO8601_FORMAT, default=lambda: dt.utcnow())

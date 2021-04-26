@@ -3,13 +3,15 @@ import yaml
 
 
 class ConfigSchema(Schema):
-    host = fields.Str(required=True)
-    port = fields.Int(required=True)
-    unix = fields.Str(missing=None, allow_none=True)
-    debug = fields.Bool(default=False, missing=False)
-    sock = fields.Str(missing=None, allow_none=True)
-    workers = fields.Int(default=1)
-    access_log = fields.Bool(default=False, missing=False)
+    HOST = fields.Str(required=True)
+    PORT = fields.Int(required=True)
+    UNIX = fields.Str(missing=None, allow_none=True)
+    DEBUG = fields.Bool(default=False, missing=False)
+    SOCK = fields.Str(missing=None, allow_none=True)
+    WORKERS = fields.Int(default=1)
+    ACCESS_LOG = fields.Bool(default=False, missing=False)
+
+    SECRET_KEY = fields.Str(required=True)
 
 
 def load_config(config_path):

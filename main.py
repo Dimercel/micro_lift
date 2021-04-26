@@ -18,18 +18,19 @@ def main():
     args = parser.parse_args()
 
     config = load_config(args.config)
-    print(config)
-    lift_app = LiftApp()
+    app.config.update(config)
+
+    lift_app = LiftApp(app)
 
     app.add_websocket_route(lift_app.entry_point, '/ws')
     app.run(
-        host=config['host'],
-        port=config['port'],
-        unix=config['unix'],
-        debug=config['debug'],
-        sock=config['sock'],
-        workers=config['workers'],
-        access_log=config['access_log']
+        host=config['HOST'],
+        port=config['PORT'],
+        unix=config['UNIX'],
+        debug=config['DEBUG'],
+        sock=config['SOCK'],
+        workers=config['WORKERS'],
+        access_log=config['ACCESS_LOG']
     )
 
     return 0

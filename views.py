@@ -1,5 +1,9 @@
 import json
 
+from auth import gen_token
+from schema import AuthSchema
+from schema import with_schema
+
 
 def response(issue, data, status='ok'):
     return {
@@ -27,8 +31,9 @@ def notify_response(event, data):
 
 
 class LiftApp:
-    def __init__(self):
+    def __init__(self, app):
         self.ws = None
+        self.app = app
         self.actor = None
 
         self._ROUTES = {
@@ -50,5 +55,6 @@ class LiftApp:
             handler = self.route(action)
             await handler(action, data['data'])
 
+    @with_schema(AuthSchema)
     async def _auth_actor(self, action, data):
-        await self.ws.send('hello from auth!')
+        await self.ws.send(repr(data))
