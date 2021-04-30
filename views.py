@@ -1,33 +1,10 @@
 import json
 
+import ujson
+
 from auth import gen_token
 from schema import AuthSchema
 from schema import with_schema
-
-
-def response(issue, data, status='ok'):
-    return {
-        'type': 'response',
-        'issue': issue,
-        'status': status,
-        'data': data
-    }
-
-
-def error_response(issue, code, message):
-    return response(
-        issue,
-        {'code': code, 'message': message},
-        'err'
-    )
-
-
-def notify_response(event, data):
-    return {
-        'type': 'notify',
-        'event': event,
-        'data': data
-    }
 
 
 class LiftApp:
@@ -57,4 +34,29 @@ class LiftApp:
 
     @with_schema(AuthSchema)
     async def _auth_actor(self, action, data):
-        await self.ws.send(repr(data))
+        await self.ws.send(self._response(action, {'test': 'ok'}))
+
+    @staticmethod
+    def _response(route, data, status='ok'):
+        return ujson.dumps({
+            'type': 'response',
+            'route': route,
+            'status': status,
+            'data': data
+        })
+
+    @classmethod
+    def _error(cls, route, code, message):
+        return cls._response(
+            route,
+            {'code': code, 'message': message},
+            'error'
+        )
+
+    @staticmethod
+    def _notify(event, data):
+        return ujson.dumps({
+            'type': 'notify',
+            'event': event,
+            'data': data
+        })
