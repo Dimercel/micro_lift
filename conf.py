@@ -11,7 +11,10 @@ class ConfigSchema(Schema):
     WORKERS = fields.Int(default=1)
     ACCESS_LOG = fields.Bool(default=False, missing=False)
 
+    AUTH_TOKEN_DELAY = fields.Int(required=True)
+    DATETIME_FORMAT = fields.Str(required=True)
     SECRET_KEY = fields.Str(required=True)
+
 
 
 def load_config(config_path):

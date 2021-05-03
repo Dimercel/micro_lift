@@ -1,17 +1,22 @@
+from datetime import datetime as dt
 import json
 
 import ujson
 
-from auth import gen_token
+from auth import gen_token, is_expired_token, is_valid_auth
+from models import Actor
 from schema import AuthSchema
 from schema import with_schema
 
 
+class TokenExpired(Exception):
+    def __init__(self, message='Token is expired', *args, **kwargs):
+        super().__init__(message, *args, **kwargs)
+
+
 class LiftApp:
     def __init__(self, app):
-        self.ws = None
         self.app = app
-        self.actor = None
 
         self._ROUTES = {
             'auth': self._auth_actor,
@@ -20,21 +25,60 @@ class LiftApp:
     def route(self, action):
         return self._ROUTES.get(action)
 
+    def authenticate(self, data):
+        uid, conf, actor = data['uid'], self.app.config, None
+        ctx = self.app.ctx
+
+        token_timestamp = dt.strptime(data['timestamp'], conf['DATETIME_FORMAT'])
+        if is_expired_token(token_timestamp, conf['AUTH_TOKEN_DELAY']):
+            raise TokenExpired
+
+        actor = None
+        if is_valid_auth(data, conf['SECRET_KEY']):
+            actor = ctx.actors.get(uid)
+            if not actor:
+                actor = Actor().load({
+                    'uid': uid,
+                    'weight': data['weight'],
+                })
+
+        return actor
+
     async def entry_point(self, request, ws):
-        self.ws = ws
 
         while True:
             msg = await ws.recv()
             data = json.loads(msg)
 
             action = data['action']
-
-            handler = self.route(action)
-            await handler(action, data['data'])
+            try:
+                handler = self.route(action)
+                await handler(action, data['data'], request, ws)
+            except TokenExpired as e:
+                await ws.send(self._error(action, 403, str(e)))
+                continue
+            except Exception as e:
+                await ws.send(self._error(action, 400, str(e)))
+                break
 
     @with_schema(AuthSchema)
-    async def _auth_actor(self, action, data):
-        await self.ws.send(self._response(action, {'test': 'ok'}))
+    async def _auth_actor(self, action, data, req, ws):
+        uid = data['uid']
+        ctx = self.app.ctx
+
+        actor = self.authenticate(data)
+        if actor:
+            ctx.actors[uid] = actor
+
+            if uid in ctx.sockets and ctx.sockets[uid]:
+                ctx.sockets[uid].append(ws)
+            else:
+                ctx.sockets[uid] = [ws]
+
+            await ws.send(self._response(action, Actor().dump(actor)))
+        else:
+            await ws.send(self._error(action, 403, 'Forbidden request'))
+            await ws.close()
 
     @staticmethod
     def _response(route, data, status='ok'):

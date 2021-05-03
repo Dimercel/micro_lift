@@ -2,7 +2,6 @@ import argparse
 import sys
 
 from sanic import Sanic
-from sanic.response import json
 import asyncio
 
 from conf import load_config
@@ -19,6 +18,9 @@ def main():
 
     config = load_config(args.config)
     app.config.update(config)
+
+    app.ctx.actors = {}
+    app.ctx.sockets = {}
 
     lift_app = LiftApp(app)
 
