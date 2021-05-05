@@ -14,6 +14,7 @@ class ConfigSchema(Schema):
     AUTH_TOKEN_DELAY = fields.Int(required=True)
     DATETIME_FORMAT = fields.Str(required=True)
     SECRET_KEY = fields.Str(required=True)
+    LIFT_COUNT = fields.Int(required=True)
 
 
 

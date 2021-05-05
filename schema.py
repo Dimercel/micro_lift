@@ -2,7 +2,8 @@ from datetime import datetime
 from functools import wraps
 
 from marshmallow import Schema, ValidationError
-from marshmallow import fields, validate
+from marshmallow import fields
+from marshmallow.validate import Range
 
 
 ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -32,3 +33,7 @@ class AuthSchema(Schema):
     timestamp = fields.Str(required=True, validate=_validate_iso8601)
     token = fields.Str(required=True)
     weight = fields.Float(required=True)
+
+
+class LiftListSchema(Schema):
+    count = fields.Int(default=10, missing=10, validate=Range(min=0))

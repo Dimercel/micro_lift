@@ -3,10 +3,10 @@ import json
 
 import ujson
 
-from auth import gen_token, is_expired_token, is_valid_auth
-from models import Actor
-from schema import AuthSchema
+from auth import is_expired_token, is_valid_auth
+from models import Actor, Lift
 from schema import with_schema
+import schema as sc
 
 
 class TokenExpired(Exception):
@@ -20,6 +20,7 @@ class LiftApp:
 
         self._ROUTES = {
             'auth': self._auth_actor,
+            'lift_list': self._lift_list,
         }
 
     def route(self, action):
@@ -61,7 +62,7 @@ class LiftApp:
                 await ws.send(self._error(action, 400, str(e)))
                 break
 
-    @with_schema(AuthSchema)
+    @with_schema(sc.AuthSchema)
     async def _auth_actor(self, action, data, req, ws):
         uid = data['uid']
         ctx = self.app.ctx
@@ -79,6 +80,13 @@ class LiftApp:
         else:
             await ws.send(self._error(action, 403, 'Forbidden request'))
             await ws.close()
+
+    @with_schema(sc.LiftListSchema)
+    async def _lift_list(self, action, data, req, ws):
+        lifts = list(self.app.ctx.lifts.values())
+
+        await ws.send(self._response(
+            action, Lift().dump(lifts[:data['count']], many=True)))
 
     @staticmethod
     def _response(route, data, status='ok'):
