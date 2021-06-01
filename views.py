@@ -21,6 +21,7 @@ class LiftApp:
         self._ROUTES = {
             'auth': self._auth_actor,
             'lift_list': self._lift_list,
+            'actor_list': self._actor_list,
         }
 
     def route(self, action):
@@ -87,6 +88,13 @@ class LiftApp:
 
         await ws.send(self._response(
             action, Lift().dump(lifts[:data['count']], many=True)))
+
+    @with_schema(sc.ActorListSchema)
+    async def _actor_list(self, action, data, req, ws):
+        actors = list(self.app.ctx.actors.values())
+
+        await ws.send(self._response(
+            action, Actor().dump(actors[:data['count']], many=True)))
 
     @staticmethod
     def _response(route, data, status='ok'):

@@ -36,4 +36,8 @@ class AuthSchema(Schema):
 
 
 class LiftListSchema(Schema):
-    count = fields.Int(default=10, missing=10, validate=Range(min=0))
+    count = fields.Int(default=10, missing=10, validate=Range(min=1))
+
+
+class ActorListSchema(Schema):
+    count = fields.Int(default=10, missing=10, validate=Range(min=1))
