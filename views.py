@@ -4,7 +4,7 @@ import json
 import ujson
 
 from auth import is_expired_token, is_valid_auth
-from models import Actor, Lift
+from models import Actor, Lift, ActorStatus
 from schema import with_schema
 import schema as sc
 
@@ -22,6 +22,8 @@ class LiftApp:
             'auth': self._auth_actor,
             'lift_list': self._lift_list,
             'actor_list': self._actor_list,
+            'actor_sleep': self._actor_sleep,
+            'actor_expect': self._actor_expect,
         }
 
     def route(self, action):
@@ -71,6 +73,7 @@ class LiftApp:
         actor = self.authenticate(data)
         if actor:
             ctx.actors[uid] = actor
+            ctx.by_ws[ws] = actor
 
             if uid in ctx.sockets and ctx.sockets[uid]:
                 ctx.sockets[uid].append(ws)
@@ -95,6 +98,25 @@ class LiftApp:
 
         await ws.send(self._response(
             action, Actor().dump(actors[:data['count']], many=True)))
+
+    async def _actor_sleep(self, action, data, req, ws):
+        actor = self.app.ctx.by_ws.get(ws)
+
+        if actor['status'] == ActorStatus.EXPECT:
+            actor['status'] = ActorStatus.SLEEP
+            actor['need_stage'] = None
+
+            await ws.send(self._response(action, Actor().dump(actor)))
+
+    @with_schema(sc.ActorExpectSchema)
+    async def _actor_expect(self, action, data, req, ws):
+        actor = self.app.ctx.by_ws.get(ws)
+
+        if actor['status'] == ActorStatus.SLEEP:
+            actor['status'] = ActorStatus.EXPECT
+            actor['need_stage'] = data['stage']
+
+            await ws.send(self._response(action, Actor().dump(actor)))
 
     @staticmethod
     def _response(route, data, status='ok'):

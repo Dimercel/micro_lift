@@ -41,3 +41,7 @@ class LiftListSchema(Schema):
 
 class ActorListSchema(Schema):
     count = fields.Int(default=10, missing=10, validate=Range(min=1))
+
+
+class ActorExpectSchema(Schema):
+    stage = fields.Int(required=True, validate=Range(min=1))

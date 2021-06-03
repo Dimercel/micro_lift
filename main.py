@@ -30,6 +30,7 @@ def main():
         })
 
     app.ctx.sockets = {}
+    app.ctx.by_ws = {}
 
     lift_app = LiftApp(app)
 

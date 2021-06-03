@@ -31,6 +31,8 @@ class Lift(Schema):
 class Actor(Schema):
     uid = fields.Str(required=True)
     weight = fields.Float(required=True)
-    stage = fields.Int(default=1, allow_none=True)
-    status = EnumField(ActorStatus, load_by=EnumField.VALUE, default=ActorStatus.SLEEP)
+    stage = fields.Int(default=1, missing=1, allow_none=True)
+    need_stage = fields.Int(default=None, missing=None, allow_none=True)
+    status = EnumField(ActorStatus, load_by=EnumField.VALUE,
+                       default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
     timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
