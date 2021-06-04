@@ -15,7 +15,7 @@ class ConfigSchema(Schema):
     DATETIME_FORMAT = fields.Str(required=True)
     SECRET_KEY = fields.Str(required=True)
     LIFT_COUNT = fields.Int(required=True)
-
+    LOOP_DELAY = fields.Float(required=True)
 
 
 def load_config(config_path):

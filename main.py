@@ -2,7 +2,6 @@ import argparse
 import sys
 
 from sanic import Sanic
-import asyncio
 
 from conf import load_config
 
@@ -35,6 +34,7 @@ def main():
     lift_app = LiftApp(app)
 
     app.add_websocket_route(lift_app.entry_point, '/ws')
+    app.add_task(LiftApp.lift_loop)
     app.run(
         host=config['HOST'],
         port=config['PORT'],

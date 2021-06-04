@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime as dt
 import json
 
@@ -117,6 +118,13 @@ class LiftApp:
             actor['need_stage'] = data['stage']
 
             await ws.send(self._response(action, Actor().dump(actor)))
+
+    @staticmethod
+    async def lift_loop(app):
+        delay = app.config['LOOP_DELAY']
+
+        while True:
+            await asyncio.sleep(delay)
 
     @staticmethod
     def _response(route, data, status='ok'):
