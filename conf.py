@@ -16,6 +16,7 @@ class ConfigSchema(Schema):
     SECRET_KEY = fields.Str(required=True)
     LIFT_COUNT = fields.Int(required=True)
     LOOP_DELAY = fields.Float(required=True)
+    STAGE_HEIGHT = fields.Float(required=True)
 
 
 def load_config(config_path):

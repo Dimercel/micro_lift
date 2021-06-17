@@ -1,5 +1,6 @@
 from datetime import datetime as dt
 from enum import Enum
+from math import ceil
 
 from marshmallow import Schema, fields
 from marshmallow_enum import EnumField
@@ -24,8 +25,17 @@ class Lift(Schema):
     speed = fields.Float(required=True)
     max_weight = fields.Int(required=True)
     position = fields.Float(default=0.0)
-    passengers = fields.List(fields.Str(), default=[])
-    status = EnumField(LiftStatus, load_by=EnumField.VALUE, default=LiftStatus.STOPPED)
+    passengers = fields.List(fields.Str(), default=[], missing=[])
+    status = EnumField(LiftStatus, load_by=EnumField.VALUE,
+                       missing=LiftStatus.STOPPED, default=LiftStatus.STOPPED)
+
+    def __init__(self, stage_height, *args, **kwargs):
+        self._stage_height = stage_height
+
+        super().__init__(*args, **kwargs)
+
+    def stage(self):
+        return ceil(self.position / self._stage_height)
 
 
 class Actor(Schema):

@@ -5,7 +5,7 @@ import json
 import ujson
 
 from auth import is_expired_token, is_valid_auth
-from models import Actor, Lift, ActorStatus
+from models import Actor, Lift, ActorStatus, LiftStatus
 from schema import with_schema
 import schema as sc
 
@@ -124,6 +124,10 @@ class LiftApp:
         delay = app.config['LOOP_DELAY']
 
         while True:
+            for lid, lift in app.ctx.lifts.items():
+                if lift['status'] == LiftStatus.IN_ACTION:
+                    pass
+
             await asyncio.sleep(delay)
 
     @staticmethod

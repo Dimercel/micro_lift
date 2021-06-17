@@ -22,7 +22,7 @@ def main():
     app.ctx.actors = {}
     app.ctx.lifts = {}
     for inx in range(config['LIFT_COUNT']):
-        app.ctx.lifts[f'lift_{inx}'] = Lift().load({
+        app.ctx.lifts[f'lift_{inx}'] = Lift(config['STAGE_HEIGHT']).load({
             'id': f'lift_{inx}',
             'speed': 1.0,
             'max_weight': 300,
