@@ -37,6 +37,19 @@ class Lift(Schema):
     def stage(self):
         return ceil(self.position / self._stage_height)
 
+    def near_drop_stage(self):
+        """Ближайший этаж, на котором нужно высадить пассажира"""
+
+        cur_stage = self.stage()
+        if self.passengers:
+            _, stage = min([(abs(cur_stage - x.need_stage), x.need_stage)
+                            for x in self.passengers],
+                           lambda x: x[0])
+
+            return stage
+
+        return cur_stage
+
 
 class Actor(Schema):
     uid = fields.Str(required=True)
