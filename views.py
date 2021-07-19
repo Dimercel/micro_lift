@@ -119,16 +119,26 @@ class LiftApp:
 
             await ws.send(self._response(action, Actor().dump(actor)))
 
-    @staticmethod
-    async def lift_loop(app):
+    async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
 
         while True:
             for lid, lift in app.ctx.lifts.items():
                 if lift['status'] == LiftStatus.IN_ACTION:
-                    pass
+                    if lift.stage == lift.near_drop_stage():
+                        lift.stop()
+                        await self._send_broadcast(
+                            self._notify('lift_stop', {'stage': lift.stage}),
+                            only=[x.uid for x in lift.passengers]
+                        )
 
             await asyncio.sleep(delay)
+
+    async def _send_broadcast(self, message, only=None):
+        uids = self.app.ctx['sockets'].keys() if only is None else only
+        for uid_item in uids:
+            for sock in self.app.ctx['sockets'][uid_item]:
+                await sock.send(message)
 
     @staticmethod
     def _response(route, data, status='ok'):

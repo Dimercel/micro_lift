@@ -34,6 +34,7 @@ class Lift(Schema):
 
         super().__init__(*args, **kwargs)
 
+    @property
     def stage(self):
         return ceil(self.position / self._stage_height)
 
@@ -49,6 +50,9 @@ class Lift(Schema):
             return stage
 
         return cur_stage
+
+    def stop(self):
+        self.status = LiftStatus.STOPPED
 
 
 class Actor(Schema):

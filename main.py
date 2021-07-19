@@ -34,7 +34,7 @@ def main():
     lift_app = LiftApp(app)
 
     app.add_websocket_route(lift_app.entry_point, '/ws')
-    app.add_task(LiftApp.lift_loop)
+    app.add_task(lift_app.lift_loop)
     app.run(
         host=config['HOST'],
         port=config['PORT'],
