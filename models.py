@@ -29,7 +29,7 @@ class Lift(Schema):
     status = EnumField(LiftStatus, load_by=EnumField.VALUE,
                        missing=LiftStatus.STOPPED, default=LiftStatus.STOPPED)
 
-    def __init__(self, stage_height, *args, **kwargs):
+    def __init__(self, stage_height=1.0, *args, **kwargs):
         self._stage_height = stage_height
 
         super().__init__(*args, **kwargs)
@@ -44,8 +44,7 @@ class Lift(Schema):
         cur_stage = self.stage()
         if self.passengers:
             _, stage = min([(abs(cur_stage - x.need_stage), x.need_stage)
-                            for x in self.passengers],
-                           lambda x: x[0])
+                            for x in self.passengers], lambda x: x[0])
 
             return stage
 
@@ -53,6 +52,9 @@ class Lift(Schema):
 
     def stop(self):
         self.status = LiftStatus.STOPPED
+
+    def is_empty(self):
+        return not self.passengers
 
 
 class Actor(Schema):
@@ -63,3 +65,8 @@ class Actor(Schema):
     status = EnumField(ActorStatus, load_by=EnumField.VALUE,
                        default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
     timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
+
+    def move_to_stage(self, stage):
+        if stage != self.stage:
+            self.need_stage = stage
+            self.status = ActorStatus.EXPECT
