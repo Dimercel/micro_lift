@@ -44,4 +44,4 @@ class ActorListSchema(Schema):
 
 
 class ActorExpectSchema(Schema):
-    stage = fields.Int(required=True, validate=Range(min=1))
+    floor = fields.Int(required=True, validate=Range(min=1))

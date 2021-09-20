@@ -29,26 +29,21 @@ class Lift(Schema):
     status = EnumField(LiftStatus, load_by=EnumField.VALUE,
                        missing=LiftStatus.STOPPED, default=LiftStatus.STOPPED)
 
-    def __init__(self, stage_height=1.0, *args, **kwargs):
-        self._stage_height = stage_height
+    def __init__(self, floor_height=1.0, *args, **kwargs):
+        self._floor_height = floor_height
 
         super().__init__(*args, **kwargs)
 
     @property
-    def stage(self):
-        return ceil(self.position / self._stage_height)
+    def floor(self):
+        return ceil(self.position / self._floor_height)
 
-    def near_drop_stage(self):
+    def near_drop_floor(self):
         """Ближайший этаж, на котором нужно высадить пассажира"""
 
-        cur_stage = self.stage
-        if self.passengers:
-            _, stage = min([(abs(cur_stage - x.need_stage), x.need_stage)
-                            for x in self.passengers], lambda x: x[0])
-
-            return stage
-
-        return cur_stage
+        cur_floor = self.floor
+        dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
+        min(dist, key=lambda x: x[0])[1] if self.passengers and dist else cur_floor
 
     def stop(self):
         self.status = LiftStatus.STOPPED
@@ -69,13 +64,13 @@ class Lift(Schema):
 class Actor(Schema):
     uid = fields.Str(required=True)
     weight = fields.Float(required=True)
-    stage = fields.Int(default=1, missing=1, allow_none=True)
-    need_stage = fields.Int(default=None, missing=None, allow_none=True)
+    floor = fields.Int(default=1, missing=1, allow_none=True)
+    need_floor = fields.Int(default=None, missing=None, allow_none=True)
     status = EnumField(ActorStatus, load_by=EnumField.VALUE,
                        default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
     timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
 
-    def move_to_stage(self, stage):
-        if stage != self.stage:
-            self.need_stage = stage
+    def move_to_floor(self, floor):
+        if floor != self.floor:
+            self.need_floor = floor
             self.status = ActorStatus.EXPECT

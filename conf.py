@@ -13,11 +13,11 @@ class ConfigSchema(Schema):
 
     AUTH_TOKEN_DELAY = fields.Int(required=True)
     DATETIME_FORMAT = fields.Str(required=True)
-    SECRET_KEY = fields.Str(required=True)
+    FLOOR_COUNT = fields.Int(required=True)
+    FLOOR_HEIGHT = fields.Float(required=True)
     LIFT_COUNT = fields.Int(required=True)
     LOOP_DELAY = fields.Float(required=True)
-    STAGE_HEIGHT = fields.Float(required=True)
-    FLOOR_COUNT = fields.Int(required=True)
+    SECRET_KEY = fields.Str(required=True)
 
 
 def load_config(config_path):

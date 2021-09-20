@@ -105,7 +105,7 @@ class LiftApp:
 
         if actor['status'] == ActorStatus.EXPECT:
             actor['status'] = ActorStatus.SLEEP
-            actor['need_stage'] = None
+            actor['need_floor'] = None
 
             await ws.send(self._response(action, Actor().dump(actor)))
 
@@ -115,7 +115,7 @@ class LiftApp:
 
         if actor['status'] != ActorStatus.IN_LIFT:
             actor['status'] = ActorStatus.EXPECT
-            actor['need_stage'] = data['stage']
+            actor['need_floor'] = data['floor']
 
             await ws.send(self._response(action, Actor().dump(actor)))
 
@@ -125,10 +125,10 @@ class LiftApp:
         while True:
             for id, lift in app.ctx.lifts.items():
                 if lift['status'] == LiftStatus.IN_ACTION:
-                    if lift.stage == lift.near_drop_stage():
+                    if lift.floor == lift.near_drop_floor():
                         lift.stop()
                         await self._send_broadcast(
-                            self._notify('lift_stop', {'stage': lift.stage}),
+                            self._notify('lift_stop', {'floor': lift.floor}),
                             only=[x.uid for x in lift.passengers]
                         )
 
