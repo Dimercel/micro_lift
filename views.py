@@ -113,7 +113,7 @@ class LiftApp:
     async def _actor_expect(self, action, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
-        if actor['status'] == ActorStatus.SLEEP:
+        if actor['status'] != ActorStatus.IN_LIFT:
             actor['status'] = ActorStatus.EXPECT
             actor['need_stage'] = data['stage']
 
@@ -123,7 +123,7 @@ class LiftApp:
         delay = app.config['LOOP_DELAY']
 
         while True:
-            for lid, lift in app.ctx.lifts.items():
+            for id, lift in app.ctx.lifts.items():
                 if lift['status'] == LiftStatus.IN_ACTION:
                     if lift.stage == lift.near_drop_stage():
                         lift.stop()
@@ -131,6 +131,10 @@ class LiftApp:
                             self._notify('lift_stop', {'stage': lift.stage}),
                             only=[x.uid for x in lift.passengers]
                         )
+
+                elif lift['status'] == LiftStatus.STOPPED:
+                    if not lift.is_empty():
+                        lift['status'] = LiftStatus.IN_ACTION
 
             await asyncio.sleep(delay)
 

@@ -41,7 +41,7 @@ class Lift(Schema):
     def near_drop_stage(self):
         """Ближайший этаж, на котором нужно высадить пассажира"""
 
-        cur_stage = self.stage()
+        cur_stage = self.stage
         if self.passengers:
             _, stage = min([(abs(cur_stage - x.need_stage), x.need_stage)
                             for x in self.passengers], lambda x: x[0])
@@ -52,6 +52,15 @@ class Lift(Schema):
 
     def stop(self):
         self.status = LiftStatus.STOPPED
+
+    def move_up(self):
+        self.position += self.speed
+
+    def move_down(self):
+        self.position -= self.speed
+
+        if self.position < 0:
+            self.position = 0
 
     def is_empty(self):
         return not self.passengers
