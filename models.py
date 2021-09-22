@@ -2,15 +2,13 @@ from datetime import datetime as dt
 from enum import Enum
 from math import ceil
 
-from marshmallow import Schema, fields
-from marshmallow_enum import EnumField
-
 
 ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 class LiftStatus(Enum):
     STOPPED = 0
+
     IN_ACTION = 1
 
 
@@ -20,19 +18,51 @@ class ActorStatus(Enum):
     IN_LIFT = 2
 
 
-class Lift(Schema):
-    id = fields.Str()
-    speed = fields.Float(required=True)
-    max_weight = fields.Int(required=True)
-    position = fields.Float(default=0.0)
-    passengers = fields.List(fields.Str(), default=[], missing=[])
-    status = EnumField(LiftStatus, load_by=EnumField.VALUE,
-                       missing=LiftStatus.STOPPED, default=LiftStatus.STOPPED)
-
-    def __init__(self, floor_height=1.0, *args, **kwargs):
+class Lift():
+    def __init__(self, id, speed, max_weight, floor_height=1.0, *args, **kwargs):
+        self._id = id
+        self._speed = speed
+        self._max_weight = max_weight
+        self._position = 0.0
+        self._passengers = []
+        self._status = LiftStatus.STOPPED
         self._floor_height = floor_height
 
         super().__init__(*args, **kwargs)
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def speed(self):
+        return self._speed
+
+    @property
+    def max_weight(self):
+        return self._max_weight
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, pos):
+        if pos >= 0.0:
+            self._position = pos
+
+    @property
+    def passengers(self):
+        return self._passengers
+
+    @passengers.setter
+    def passengers(self, pas):
+        if sum([x.weight for x in pas]) <= self._max_weight:
+            self._passengers = pas
+
+    @property
+    def status(self):
+        return self._status
 
     @property
     def floor(self):
@@ -46,31 +76,55 @@ class Lift(Schema):
         min(dist, key=lambda x: x[0])[1] if self.passengers and dist else cur_floor
 
     def stop(self):
-        self.status = LiftStatus.STOPPED
+        self._status = LiftStatus.STOPPED
 
     def move_up(self):
-        self.position += self.speed
+        self._position += self.speed
 
     def move_down(self):
-        self.position -= self.speed
+        self._position -= self.speed
 
-        if self.position < 0:
-            self.position = 0
+        if self._position < 0:
+            self._position = 0
 
     def is_empty(self):
-        return not self.passengers
+        return not self._passengers
 
 
-class Actor(Schema):
-    uid = fields.Str(required=True)
-    weight = fields.Float(required=True)
-    floor = fields.Int(default=1, missing=1, allow_none=True)
-    need_floor = fields.Int(default=None, missing=None, allow_none=True)
-    status = EnumField(ActorStatus, load_by=EnumField.VALUE,
-                       default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
-    timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
+class Actor:
+    def __init__(self, uid, weight):
+        self._uid = uid
+        self._weight = weight
+        self._floor = 1
+        self._need_floor = None
+        self._status = ActorStatus.SLEEP
+        self._timestamp = dt.utcnow()
 
-    def move_to_floor(self, floor):
-        if floor != self.floor:
-            self.need_floor = floor
-            self.status = ActorStatus.EXPECT
+    @property
+    def uid(self):
+        return self._uid
+
+    @property
+    def weight(self):
+        return self._weight
+
+    @property
+    def floor(self):
+        return self._floor
+
+    @property
+    def need_floor(self):
+        return self._need_floor
+
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def timestamp(self):
+        return self._timestamp
+
+    def wait_lift(self, floor):
+        if floor != self._floor:
+            self._need_floor = floor
+            self._status = ActorStatus.EXPECT

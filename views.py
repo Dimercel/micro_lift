@@ -42,10 +42,7 @@ class LiftApp:
         if is_valid_auth(data, conf['SECRET_KEY']):
             actor = ctx.actors.get(uid)
             if not actor:
-                actor = Actor().load({
-                    'uid': uid,
-                    'weight': data['weight'],
-                })
+                actor = Actor(uid, data['weight'])
 
         return actor
 
@@ -81,7 +78,7 @@ class LiftApp:
             else:
                 ctx.sockets[uid] = [ws]
 
-            await ws.send(self._response(action, Actor().dump(actor)))
+            await ws.send(self._response(action, sc.Actor().dump(actor)))
         else:
             await ws.send(self._error(action, 403, 'Forbidden request'))
             await ws.close()
@@ -124,7 +121,7 @@ class LiftApp:
 
         while True:
             for id, lift in app.ctx.lifts.items():
-                if lift['status'] == LiftStatus.IN_ACTION:
+                if lift.status == LiftStatus.IN_ACTION:
                     if lift.floor == lift.near_drop_floor():
                         lift.stop()
                         await self._send_broadcast(
@@ -132,9 +129,9 @@ class LiftApp:
                             only=[x.uid for x in lift.passengers]
                         )
 
-                elif lift['status'] == LiftStatus.STOPPED:
+                elif lift.status == LiftStatus.STOPPED:
                     if not lift.is_empty():
-                        lift['status'] = LiftStatus.IN_ACTION
+                        lift.status = LiftStatus.IN_ACTION
 
             await asyncio.sleep(delay)
 

@@ -1,10 +1,12 @@
-from datetime import datetime
+from datetime import datetime as dt
 from functools import wraps
 
 from marshmallow import Schema, ValidationError
 from marshmallow import fields
 from marshmallow.validate import Range
+from marshmallow_enum import EnumField
 
+from models import ActorStatus, LiftStatus
 
 ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
@@ -23,7 +25,7 @@ def with_schema(schema):
 
 def _validate_iso8601(value):
     try:
-        datetime.strptime(value, ISO8601_FORMAT)
+        dt.strptime(value, ISO8601_FORMAT)
     except ValueError:
         raise ValidationError(f"'{value}' is not correct ISO 8601 value")
 
@@ -45,3 +47,21 @@ class ActorListSchema(Schema):
 
 class ActorExpectSchema(Schema):
     floor = fields.Int(required=True, validate=Range(min=1))
+
+class Actor(Schema):
+    uid = fields.Str(required=True)
+    weight = fields.Float(required=True)
+    floor = fields.Int(default=1, missing=1, allow_none=True)
+    need_floor = fields.Int(default=None, missing=None, allow_none=True)
+    status = EnumField(ActorStatus, load_by=EnumField.VALUE,
+                       default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
+    timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
+
+class Lift(Schema):
+    id = fields.Str()
+    speed = fields.Float(required=True)
+    max_weight = fields.Int(required=True)
+    position = fields.Float(default=0.0)
+    passengers = fields.List(fields.Str(), default=[], missing=[])
+    status = EnumField(LiftStatus, load_by=EnumField.VALUE,
+                       missing=LiftStatus.STOPPED, default=LiftStatus.STOPPED)
