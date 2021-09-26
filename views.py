@@ -130,8 +130,14 @@ class LiftApp:
                         )
 
                 elif lift.status == LiftStatus.STOPPED:
-                    if not lift.is_empty():
-                        lift.status = LiftStatus.IN_ACTION
+                    if lift.passengers:
+                        out_pass = lift.out_passengers()
+                        if out_pass:
+                            # Высаживаем пассажиров
+                            lift.passengers = [x for x in lift.passengers if x not in out_pass]
+
+                            for passenger in out_pass:
+                                passenger.leave_lift()
 
             await asyncio.sleep(delay)
 

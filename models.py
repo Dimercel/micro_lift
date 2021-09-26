@@ -87,6 +87,9 @@ class Lift():
         if self._position < 0:
             self._position = 0
 
+    def out_passengers(self):
+        return [x for x in self._passengers if x.need_floor == self.floor]
+
     def is_empty(self):
         return not self._passengers
 
@@ -128,3 +131,10 @@ class Actor:
         if floor != self._floor:
             self._need_floor = floor
             self._status = ActorStatus.EXPECT
+
+    def leave_lift(self):
+        if self._floor == self._need_floor:
+            self._status = ActorStatus.SLEEP
+            self._need_floor = None
+
+        return self._floor
