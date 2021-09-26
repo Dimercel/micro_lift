@@ -27,8 +27,8 @@ class LiftApp:
             'actor_expect': self._actor_expect,
         }
 
-    def route(self, action):
-        return self._ROUTES.get(action)
+    def route(self, signal):
+        return self._ROUTES.get(signal)
 
     def authenticate(self, data):
         uid, conf, actor = data['uid'], self.app.config, None
@@ -52,19 +52,19 @@ class LiftApp:
             msg = await ws.recv()
             data = json.loads(msg)
 
-            action = data['action']
+            signal = data['signal']
             try:
-                handler = self.route(action)
-                await handler(action, data['data'], request, ws)
+                handler = self.route(signal)
+                await handler(signal, data['data'], request, ws)
             except TokenExpired as e:
-                await ws.send(self._error(action, 403, str(e)))
+                await ws.send(self._error(signal, 403, str(e)))
                 continue
             except Exception as e:
-                await ws.send(self._error(action, 400, str(e)))
+                await ws.send(self._error(signal, 400, str(e)))
                 break
 
     @with_schema(sc.AuthSchema)
-    async def _auth_actor(self, action, data, req, ws):
+    async def _auth_actor(self, signal, data, req, ws):
         uid = data['uid']
         ctx = self.app.ctx
 
@@ -78,43 +78,43 @@ class LiftApp:
             else:
                 ctx.sockets[uid] = [ws]
 
-            await ws.send(self._response(action, sc.Actor().dump(actor)))
+            await ws.send(self._response(signal, sc.Actor().dump(actor)))
         else:
-            await ws.send(self._error(action, 403, 'Forbidden request'))
+            await ws.send(self._error(signal, 403, 'Forbidden request'))
             await ws.close()
 
     @with_schema(sc.LiftListSchema)
-    async def _lift_list(self, action, data, req, ws):
+    async def _lift_list(self, signal, data, req, ws):
         lifts = list(self.app.ctx.lifts.values())
 
         await ws.send(self._response(
-            action, Lift().dump(lifts[:data['count']], many=True)))
+            signal, Lift().dump(lifts[:data['count']], many=True)))
 
     @with_schema(sc.ActorListSchema)
-    async def _actor_list(self, action, data, req, ws):
+    async def _actor_list(self, signal, data, req, ws):
         actors = list(self.app.ctx.actors.values())
 
         await ws.send(self._response(
-            action, Actor().dump(actors[:data['count']], many=True)))
+            signal, Actor().dump(actors[:data['count']], many=True)))
 
-    async def _actor_sleep(self, action, data, req, ws):
+    async def _actor_sleep(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
         if actor['status'] == ActorStatus.EXPECT:
             actor['status'] = ActorStatus.SLEEP
             actor['need_floor'] = None
 
-            await ws.send(self._response(action, Actor().dump(actor)))
+            await ws.send(self._response(signal, Actor().dump(actor)))
 
     @with_schema(sc.ActorExpectSchema)
-    async def _actor_expect(self, action, data, req, ws):
+    async def _actor_expect(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
         if actor['status'] != ActorStatus.IN_LIFT:
             actor['status'] = ActorStatus.EXPECT
             actor['need_floor'] = data['floor']
 
-            await ws.send(self._response(action, Actor().dump(actor)))
+            await ws.send(self._response(signal, Actor().dump(actor)))
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
@@ -142,18 +142,18 @@ class LiftApp:
                 await sock.send(message)
 
     @staticmethod
-    def _response(route, data, status='ok'):
+    def _response(signal, data, status='ok'):
         return ujson.dumps({
             'type': 'response',
-            'route': route,
+            'signal': signal,
             'status': status,
             'data': data
         })
 
     @classmethod
-    def _error(cls, route, code, message):
+    def _error(cls, signal, code, message):
         return cls._response(
-            route,
+            signal,
             {'code': code, 'message': message},
             'error'
         )
