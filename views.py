@@ -55,6 +55,10 @@ class LiftApp:
             signal = data['signal']
             try:
                 handler = self.route(signal)
+                if handler is None:
+                    await ws.send(self._error(signal, 404, str('Signal not found!')))
+                    continue
+
                 await handler(signal, data['data'], request, ws)
             except TokenExpired as e:
                 await ws.send(self._error(signal, 403, str(e)))
@@ -88,14 +92,14 @@ class LiftApp:
         lifts = list(self.app.ctx.lifts.values())
 
         await ws.send(self._response(
-            signal, Lift().dump(lifts[:data['count']], many=True)))
+            signal, sc.Lift().dump(lifts[:data['count']], many=True)))
 
     @with_schema(sc.ActorListSchema)
     async def _actor_list(self, signal, data, req, ws):
         actors = list(self.app.ctx.actors.values())
 
         await ws.send(self._response(
-            signal, Actor().dump(actors[:data['count']], many=True)))
+            signal, sc.Actor().dump(actors[:data['count']], many=True)))
 
     async def _actor_sleep(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
@@ -104,7 +108,7 @@ class LiftApp:
             actor['status'] = ActorStatus.SLEEP
             actor['need_floor'] = None
 
-            await ws.send(self._response(signal, Actor().dump(actor)))
+            await ws.send(self._response(signal, sc.Actor().dump(actor)))
 
     @with_schema(sc.ActorExpectSchema)
     async def _actor_expect(self, signal, data, req, ws):
@@ -114,7 +118,7 @@ class LiftApp:
             actor['status'] = ActorStatus.EXPECT
             actor['need_floor'] = data['floor']
 
-            await ws.send(self._response(signal, Actor().dump(actor)))
+            await ws.send(self._response(signal, sc.Actor().dump(actor)))
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
