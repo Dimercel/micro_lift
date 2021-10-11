@@ -104,21 +104,21 @@ class LiftApp:
     async def _actor_sleep(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
-        if actor['status'] == ActorStatus.EXPECT:
+        # TODO сделать в соответствии с моделью Actor
+        if actor.status == ActorStatus.EXPECT:
             actor['status'] = ActorStatus.SLEEP
             actor['need_floor'] = None
 
-            await ws.send(self._response(signal, sc.Actor().dump(actor)))
+        await ws.send(self._response(signal, sc.Actor().dump(actor)))
 
     @with_schema(sc.ActorExpectSchema)
     async def _actor_expect(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
-        if actor['status'] != ActorStatus.IN_LIFT:
-            actor['status'] = ActorStatus.EXPECT
-            actor['need_floor'] = data['floor']
+        if actor.status != ActorStatus.IN_LIFT:
+            actor.wait_lift(data['floor'])
 
-            await ws.send(self._response(signal, sc.Actor().dump(actor)))
+        await ws.send(self._response(signal, sc.Actor().dump(actor)))
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
