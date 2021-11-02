@@ -143,6 +143,26 @@ class LiftApp:
                             for passenger in out_pass:
                                 passenger.leave_lift()
 
+                    else:
+                        actors = app.ctx.actors.values()
+                        take_floor = lift.near_take_floor(actors)
+                        if take_floor is not None:
+                            if take_floor == lift.floor:
+                                lift.passengers = [x for x in actors if x.floor == take_floor]
+
+                                if lift.near_drop_floor() > lift.floor:
+                                    lift.move_up()
+                                else:
+                                    lift.move_down()
+
+                            else:
+                                if take_floor > lift.floor:
+                                    lift.move_up()
+                                else:
+                                    lift.move_down()
+
+
+
             await asyncio.sleep(delay)
 
     async def _send_broadcast(self, message, only=None):

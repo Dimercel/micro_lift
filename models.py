@@ -73,15 +73,25 @@ class Lift():
 
         cur_floor = self.floor
         dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
-        min(dist, key=lambda x: x[0])[1] if self.passengers and dist else cur_floor
+        return min(dist, key=lambda x: x[0])[1] if dist else None
+
+    def near_take_floor(self, actors):
+        """Ближайший этаж, на котором следует забрать пассажира"""
+
+        cur_floor = self.floor
+        dist = [(abs(cur_floor - x.floor), x.floor) for x in actors]
+        return min(dist, key=lambda x: x[0])[1] if dist else None
+
 
     def stop(self):
         self._status = LiftStatus.STOPPED
 
     def move_up(self):
+        self._status = LiftStatus.IN_ACTION
         self._position += self.speed
 
     def move_down(self):
+        self._status = LiftStatus.IN_ACTION
         self._position -= self.speed
 
         if self._position < 0:
