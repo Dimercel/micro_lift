@@ -23,7 +23,7 @@ class LiftApp:
             'auth': self._auth_actor,
             'lift_list': self._lift_list,
             'actor_list': self._actor_list,
-            'actor_sleep': self._actor_sleep,
+            'actor_idle': self._actor_idle,
             'actor_expect': self._actor_expect,
         }
 
@@ -101,12 +101,12 @@ class LiftApp:
         await ws.send(self._response(
             signal, sc.Actor().dump(actors[:data['count']], many=True)))
 
-    async def _actor_sleep(self, signal, data, req, ws):
+    async def _actor_idle(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
         # TODO сделать в соответствии с моделью Actor
         if actor.status == ActorStatus.EXPECT:
-            actor['status'] = ActorStatus.SLEEP
+            actor['status'] = ActorStatus.IDLE
             actor['need_floor'] = None
 
         await ws.send(self._response(signal, sc.Actor().dump(actor)))

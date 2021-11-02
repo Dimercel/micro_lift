@@ -13,7 +13,7 @@ class LiftStatus(Enum):
 
 
 class ActorStatus(Enum):
-    SLEEP = 0
+    IDLE = 0
     EXPECT = 1
     IN_LIFT = 2
 
@@ -100,7 +100,7 @@ class Actor:
         self._weight = weight
         self._floor = 1
         self._need_floor = None
-        self._status = ActorStatus.SLEEP
+        self._status = ActorStatus.IDLE
         self._timestamp = dt.utcnow()
 
     @property
@@ -134,7 +134,7 @@ class Actor:
 
     def leave_lift(self):
         if self._floor == self._need_floor:
-            self._status = ActorStatus.SLEEP
+            self._status = ActorStatus.IDLE
             self._need_floor = None
 
         return self._floor

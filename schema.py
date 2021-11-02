@@ -54,7 +54,7 @@ class Actor(Schema):
     floor = fields.Int(default=1, missing=1, allow_none=True)
     need_floor = fields.Int(default=None, missing=None, allow_none=True)
     status = EnumField(ActorStatus, load_by=EnumField.VALUE,
-                       default=ActorStatus.SLEEP, missing=ActorStatus.SLEEP)
+                       default=ActorStatus.IDLE, missing=ActorStatus.IDLE)
     timestamp = fields.DateTime(ISO8601_FORMAT, missing=lambda: dt.utcnow())
 
 class Lift(Schema):
