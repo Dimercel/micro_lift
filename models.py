@@ -22,7 +22,7 @@ class Lift():
         self._id = id
         self._speed = speed
         self._max_weight = max_weight
-        self._position = 0.0
+        self._position = 0.01
         self._passengers = []
         self._status = LiftStatus.STOPPED
         self._floor_height = floor_height
@@ -81,7 +81,9 @@ class Lift():
         """Высаживаем пассажиров, которые должны выйти на этом этаже"""
 
         drop_off = self._out_passengers()
-        map(lambda x: x.leave_lift(), drop_off)
+        for p in drop_off:
+            self._passengers.remove(p)
+            p.leave_lift(self.floor)
 
         return drop_off
 
@@ -89,7 +91,7 @@ class Lift():
         """Забирает actor'ов c текущего этажа, если им нужен лифт"""
 
         new_passengers = [x for x in actors if x.floor == self.floor and
-                      x.need_floor is not None]
+                          x.status == ActorStatus.EXPECT]
 
         # теперь нужно проверить ограничение с грузоподъемностью лифта
         new_passengers.sort(key=lambda x: x.weight)
@@ -103,7 +105,9 @@ class Lift():
             weight += p.weight
 
         new_passengers = new_passengers[0:extra_inx]
-        map(lambda x: x.enter_lift(), new_passengers)
+        for x in new_passengers:
+            x.enter_lift()
+
         self._passengers += new_passengers
 
         return new_passengers
@@ -112,13 +116,23 @@ class Lift():
     def stop(self):
         self._status = LiftStatus.STOPPED
 
+    def move_to_act_floor(self, actors):
+        """Перемещает лифт на один шаг к целевому этажу"""
+
+        near = self.near_act_floor(actors)
+        if near is not None:
+            if near < self.floor:
+                self.move_down()
+            else:
+                self.move_up()
+
     def move_up(self):
         self._status = LiftStatus.IN_ACTION
-        self._position += self.speed
+        self._position += self._speed
 
     def move_down(self):
         self._status = LiftStatus.IN_ACTION
-        self._position -= self.speed
+        self._position -= self._speed
 
         if self._position < 0:
             self._position = 0
@@ -135,7 +149,7 @@ class Lift():
         """Ближайший этаж, на котором нужно высадить пассажира"""
 
         cur_floor = self.floor
-        dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
+        dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self._passengers]
 
         return min(dist, key=lambda x: x[0])[1] if dist else None
 
@@ -146,7 +160,7 @@ class Lift():
         cur_floor = self.floor
         possible_weight = self._max_weight - sum([x.weight for x in self._passengers])
         dist = [(abs(cur_floor - x.floor), x.floor) for x in actors
-                if x.weight <= possible_weight]
+                if x.weight <= possible_weight and x.status == ActorStatus.EXPECT]
 
         return min(dist, key=lambda x: x[0])[1] if dist else None
 
@@ -191,10 +205,11 @@ class Actor:
             self._need_floor = floor
             self._status = ActorStatus.EXPECT
 
-    def leave_lift(self):
+    def leave_lift(self, floor):
         """Покидает лифт и выходит на этаж"""
 
-        if self._floor == self._need_floor:
+        if self._status == ActorStatus.IN_LIFT:
+            self._floor = floor
             self._status = ActorStatus.IDLE
             self._need_floor = None
 
