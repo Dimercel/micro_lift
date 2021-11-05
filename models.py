@@ -72,16 +72,10 @@ class Lift():
 
         drop, take = self._near_drop_floor(), self._near_take_floor(actors)
 
-        if drop is None and take is None:
-            return None
+        if None not in (drop, take):
+            return drop if abs(self.floor - drop) < abs(self.floor - take) else take
 
-        if drop is None:
-            return take
-
-        if take is None:
-            return drop
-
-        return drop if abs(self.floor - drop) < abs(self.floor - take) else take
+        return drop or take
 
     def drop_off(self):
         """Высаживаем пассажиров, которые должны выйти на этом этаже"""
