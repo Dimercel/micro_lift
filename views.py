@@ -122,15 +122,23 @@ class LiftApp:
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
+        actors = app.cts.actors.values()
 
         while True:
-            for id, lift in app.ctx.lifts.items():
+            for lift_id, lift in app.ctx.lifts.items():
                 if lift.status == LiftStatus.IN_ACTION:
-                    if lift.floor == lift.near_drop_floor():
+                    if lift.floor == lift.near_act_floor():
                         lift.stop()
+                        # Сначала высаживаем
                         await self._send_broadcast(
-                            self._notify('lift_stop', {'floor': lift.floor}),
-                            only=[x.uid for x in lift.passengers]
+                            self._notify('drop_off', {'id': lift_id, 'floor': lift.floor}),
+                            only=[x.uid for x in lift.drop_off()]
+                        )
+
+                        # Потом забираем, если это необходимо
+                        await self._send_broadcast(
+                            self._notify('enter_lift', {'id': lift_id, 'floor': lift.floor}),
+                            only=[x.uid for x in lift.take_actors(actors)]
                         )
 
                 elif lift.status == LiftStatus.STOPPED:

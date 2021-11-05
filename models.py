@@ -67,25 +67,6 @@ class Lift():
     def floor(self):
         return ceil(self.position / self._floor_height)
 
-    def _near_drop_floor(self):
-        """Ближайший этаж, на котором нужно высадить пассажира"""
-
-        cur_floor = self.floor
-        dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
-
-        return min(dist, key=lambda x: x[0])[1] if dist else None
-
-    def _near_take_floor(self, actors):
-        """Ближайший этаж, на котором следует забрать пассажира,
-        при условии что его вес не приведет к перегрузке лифта
-        """
-        cur_floor = self.floor
-        weight_limit = self._max_weight - sum([x.weight for x in self._passengers])
-        dist = [(abs(cur_floor - x.floor), x.floor) for x in actors
-                if x.weight <= weight_limit]
-
-        return min(dist, key=lambda x: x[0])[1] if dist else None
-
     def near_act_floor(self, actors):
         """Ближайший этаж на котором нужно выполнить какое-то действие"""
 
@@ -102,6 +83,38 @@ class Lift():
 
         return drop if abs(self.floor - drop) < abs(self.floor - take) else take
 
+    def drop_off(self):
+        """Высаживаем пассажиров, которые должны выйти на этом этаже"""
+
+        drop_off = self._out_passengers()
+        map(lambda x: x.leave_lift(), drop_off)
+
+        return drop_off
+
+    def take_actors(self, actors):
+        """Забирает actor'ов c текущего этажа, если им нужен лифт"""
+
+        new_passengers = [x for x in actors if x.floor == self.floor and
+                      x.need_floor is not None]
+
+        # теперь нужно проверить ограничение с грузоподъемностью лифта
+        new_passengers.sort(key=lambda x: x.weight)
+        possible_weight = self._max_weight - sum([x.weight for x in self._passengers])
+        extra_inx = weight = 0
+        for p in new_passengers:
+            extra_inx += 1
+            if possible_weight > weight + p.weight:
+                break
+
+            weight += p.weight
+
+        new_passengers = new_passengers[0:extra_inx]
+        map(lambda x: x.enter_lift(), new_passengers)
+        self._passengers += new_passengers
+
+        return new_passengers
+
+
     def stop(self):
         self._status = LiftStatus.STOPPED
 
@@ -116,11 +129,33 @@ class Lift():
         if self._position < 0:
             self._position = 0
 
-    def out_passengers(self):
-        return [x for x in self._passengers if x.need_floor == self.floor]
-
     def is_empty(self):
         return not self._passengers
+
+    def _out_passengers(self):
+        """Пассажиры, выходящие на текущем этаже"""
+
+        return [x for x in self._passengers if x.need_floor == self.floor]
+
+    def _near_drop_floor(self):
+        """Ближайший этаж, на котором нужно высадить пассажира"""
+
+        cur_floor = self.floor
+        dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
+
+        return min(dist, key=lambda x: x[0])[1] if dist else None
+
+    def _near_take_floor(self, actors):
+        """Ближайший этаж, на котором следует забрать пассажира,
+        при условии что его вес не приведет к перегрузке лифта
+        """
+        cur_floor = self.floor
+        possible_weight = self._max_weight - sum([x.weight for x in self._passengers])
+        dist = [(abs(cur_floor - x.floor), x.floor) for x in actors
+                if x.weight <= possible_weight]
+
+        return min(dist, key=lambda x: x[0])[1] if dist else None
+
 
 
 class Actor:
@@ -157,13 +192,28 @@ class Actor:
         return self._timestamp
 
     def wait_lift(self, floor):
+        """Ожидать лифт на текущем этаже"""
         if floor != self._floor:
             self._need_floor = floor
             self._status = ActorStatus.EXPECT
 
     def leave_lift(self):
+        """Покидает лифт и выходит на этаж"""
+
         if self._floor == self._need_floor:
             self._status = ActorStatus.IDLE
             self._need_floor = None
 
-        return self._floor
+            return True
+
+        return False
+
+    def enter_lift(self):
+        """Заходит в лифт, если это возможно"""
+
+        if self._status == ActorStatus.EXPECT:
+            self._status = ActorStatus.IN_LIFT
+
+            return True
+
+        return False
