@@ -122,13 +122,19 @@ class LiftApp:
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
-        actors = app.cts.actors.values()
+        actors = app.ctx.actors.values()
 
         while True:
             for lift_id, lift in app.ctx.lifts.items():
+                near = lift.near_act_floor(actors)
                 if lift.status == LiftStatus.IN_ACTION:
-                    if lift.floor == lift.near_act_floor():
+                    if near is None or lift.floor == near:
                         lift.stop()
+                    else:
+                        lift.move_to_act_floor(actors)
+
+                elif lift.status == LiftStatus.STOPPED:
+                    if near is not None and lift.floor == near:
                         # Сначала высаживаем
                         await self._send_broadcast(
                             self._notify('drop_off', {'id': lift_id, 'floor': lift.floor}),
@@ -141,42 +147,17 @@ class LiftApp:
                             only=[x.uid for x in lift.take_actors(actors)]
                         )
 
-                elif lift.status == LiftStatus.STOPPED:
-                    if lift.passengers:
-                        out_pass = lift.out_passengers()
-                        if out_pass:
-                            # Высаживаем пассажиров
-                            lift.passengers = [x for x in lift.passengers if x not in out_pass]
+                        lift.move_to_act_floor(actors)
 
-                            for passenger in out_pass:
-                                passenger.leave_lift()
-
-                    else:
-                        actors = app.ctx.actors.values()
-                        take_floor = lift.near_take_floor(actors)
-                        if take_floor is not None:
-                            if take_floor == lift.floor:
-                                lift.passengers = [x for x in actors if x.floor == take_floor]
-
-                                if lift.near_drop_floor() > lift.floor:
-                                    lift.move_up()
-                                else:
-                                    lift.move_down()
-
-                            else:
-                                if take_floor > lift.floor:
-                                    lift.move_up()
-                                else:
-                                    lift.move_down()
-
-
+                    if near is not None and lift.floor != near:
+                        lift.move_to_act_floor(actors)
 
             await asyncio.sleep(delay)
 
     async def _send_broadcast(self, message, only=None):
-        uids = self.app.ctx['sockets'].keys() if only is None else only
+        uids = self.app.ctx.sockets.keys() if only is None else only
         for uid_item in uids:
-            for sock in self.app.ctx['sockets'][uid_item]:
+            for sock in self.app.ctx.sockets[uid_item]:
                 await sock.send(message)
 
     @staticmethod
