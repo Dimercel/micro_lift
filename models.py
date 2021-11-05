@@ -8,7 +8,6 @@ ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 class LiftStatus(Enum):
     STOPPED = 0
-
     IN_ACTION = 1
 
 
@@ -68,20 +67,40 @@ class Lift():
     def floor(self):
         return ceil(self.position / self._floor_height)
 
-    def near_drop_floor(self):
+    def _near_drop_floor(self):
         """Ближайший этаж, на котором нужно высадить пассажира"""
 
         cur_floor = self.floor
         dist = [(abs(cur_floor - x.need_floor), x.need_floor) for x in self.passengers]
+
         return min(dist, key=lambda x: x[0])[1] if dist else None
 
-    def near_take_floor(self, actors):
-        """Ближайший этаж, на котором следует забрать пассажира"""
-
+    def _near_take_floor(self, actors):
+        """Ближайший этаж, на котором следует забрать пассажира,
+        при условии что его вес не приведет к перегрузке лифта
+        """
         cur_floor = self.floor
-        dist = [(abs(cur_floor - x.floor), x.floor) for x in actors]
+        weight_limit = self._max_weight - sum([x.weight for x in self._passengers])
+        dist = [(abs(cur_floor - x.floor), x.floor) for x in actors
+                if x.weight <= weight_limit]
+
         return min(dist, key=lambda x: x[0])[1] if dist else None
 
+    def near_act_floor(self, actors):
+        """Ближайший этаж на котором нужно выполнить какое-то действие"""
+
+        drop, take = self._near_drop_floor(), self._near_take_floor(actors)
+
+        if drop is None and take is None:
+            return None
+
+        if drop is None:
+            return take
+
+        if take is None:
+            return drop
+
+        return drop if abs(self.floor - drop) < abs(self.floor - take) else take
 
     def stop(self):
         self._status = LiftStatus.STOPPED
