@@ -132,6 +132,10 @@ class LiftApp:
             for lift_id, lift in app.ctx.lifts.items():
                 near = lift.near_act_floor(actors)
                 if lift.status == LiftStatus.IN_ACTION:
+                    cur_floor = lift.floor
+                    for p in lift.passengers:
+                        p.floor = cur_floor
+
                     if near is None or lift.floor == near:
                         lift.stop()
                     else:

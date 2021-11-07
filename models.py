@@ -83,7 +83,7 @@ class Lift():
         drop_off = self._out_passengers()
         for p in drop_off:
             self._passengers.remove(p)
-            p.leave_lift(self.floor)
+            p.leave_lift()
 
         return drop_off
 
@@ -187,6 +187,11 @@ class Actor:
     def floor(self):
         return self._floor
 
+    @floor.setter
+    def floor(self, value):
+        if value >= 1:
+            self._floor = value
+
     @property
     def need_floor(self):
         return self._need_floor
@@ -205,11 +210,10 @@ class Actor:
             self._need_floor = floor
             self._status = ActorStatus.EXPECT
 
-    def leave_lift(self, floor):
+    def leave_lift(self):
         """Покидает лифт и выходит на этаж"""
 
         if self._status == ActorStatus.IN_LIFT:
-            self._floor = floor
             self._status = ActorStatus.IDLE
             self._need_floor = None
 
