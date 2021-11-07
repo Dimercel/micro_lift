@@ -82,6 +82,10 @@ class LiftApp:
             else:
                 ctx.sockets[uid] = [ws]
 
+            await self._send_broadcast(
+                self._notify('actor_arrive', sc.Actor().dump(actor)),
+                exclude={uid}
+            )
             await ws.send(self._response(signal, sc.Actor().dump(actor)))
         else:
             await ws.send(self._error(signal, 403, 'Forbidden request'))
@@ -154,11 +158,12 @@ class LiftApp:
 
             await asyncio.sleep(delay)
 
-    async def _send_broadcast(self, message, only=None):
+    async def _send_broadcast(self, message, only=None, exclude=[]):
         uids = self.app.ctx.sockets.keys() if only is None else only
         for uid_item in uids:
-            for sock in self.app.ctx.sockets[uid_item]:
-                await sock.send(message)
+            if uid_item not in exclude:
+                for sock in self.app.ctx.sockets[uid_item]:
+                    await sock.send(message)
 
     @staticmethod
     def _response(signal, data, status='ok'):
