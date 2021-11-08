@@ -1,7 +1,9 @@
 import asyncio
 from datetime import datetime as dt
 import json
+from json import JSONDecodeError
 
+from marshmallow.exceptions import ValidationError
 import ujson
 
 from auth import is_expired_token, is_valid_auth
@@ -50,25 +52,34 @@ class LiftApp:
 
         while True:
             msg = await ws.recv()
-            data = json.loads(msg)
+            try:
+                data = json.loads(msg)
+                # Предварительная валидация сообщения в соответствии с протоколом
+                valid_data = sc.IncomingSchema().load(data)
+            except JSONDecodeError as e:
+                await ws.send(self._error('invalid', None, 400, str(e)))
+                continue
+            except ValidationError as e:
+                await ws.send(self._error('invalid', data.get(id), 400, str(e)))
+                continue
 
-            signal = data['signal']
+            signal, id = valid_data['signal'], valid_data['id']
             try:
                 handler = self.route(signal)
                 if handler is None:
-                    await ws.send(self._error(signal, 404, str('Signal not found!')))
+                    await ws.send(self._error(signal, id, 404, str('Signal not found!')))
                     continue
 
-                await handler(signal, data['data'], request, ws)
+                await handler(signal, id, data['data'], request, ws)
             except TokenExpired as e:
-                await ws.send(self._error(signal, 403, str(e)))
+                await ws.send(self._error(signal, id, 403, str(e)))
                 continue
             except Exception as e:
-                await ws.send(self._error(signal, 400, str(e)))
+                await ws.send(self._error(signal, id, 400, str(e)))
                 break
 
     @with_schema(sc.AuthSchema)
-    async def _auth_actor(self, signal, data, req, ws):
+    async def _auth_actor(self, signal, id, data, req, ws):
         uid = data['uid']
         ctx = self.app.ctx
 
@@ -86,24 +97,24 @@ class LiftApp:
                 self._notify('actor_arrive', sc.Actor().dump(actor)),
                 exclude={uid}
             )
-            await ws.send(self._response(signal, sc.Actor().dump(actor)))
+            await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
         else:
-            await ws.send(self._error(signal, 403, 'Forbidden request'))
+            await ws.send(self._error(signal, id, 403, 'Forbidden request'))
             await ws.close()
 
     @with_schema(sc.LiftListSchema)
-    async def _lift_list(self, signal, data, req, ws):
+    async def _lift_list(self, signal, id,  data, req, ws):
         lifts = list(self.app.ctx.lifts.values())
 
         await ws.send(self._response(
-            signal, sc.Lift().dump(lifts[:data['count']], many=True)))
+            signal, id, sc.Lift().dump(lifts[:data['count']], many=True)))
 
     @with_schema(sc.ActorListSchema)
-    async def _actor_list(self, signal, data, req, ws):
+    async def _actor_list(self, signal, id, data, req, ws):
         actors = list(self.app.ctx.actors.values())
 
         await ws.send(self._response(
-            signal, sc.Actor().dump(actors[:data['count']], many=True)))
+            signal, id, sc.Actor().dump(actors[:data['count']], many=True)))
 
     async def _actor_idle(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
@@ -113,16 +124,16 @@ class LiftApp:
             actor['status'] = ActorStatus.IDLE
             actor['need_floor'] = None
 
-        await ws.send(self._response(signal, sc.Actor().dump(actor)))
+        await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
     @with_schema(sc.ActorExpectSchema)
-    async def _actor_expect(self, signal, data, req, ws):
+    async def _actor_expect(self, signal, id, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
         if actor.status != ActorStatus.IN_LIFT:
             actor.wait_lift(data['floor'])
 
-        await ws.send(self._response(signal, sc.Actor().dump(actor)))
+        await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
     async def lift_loop(self, app):
         delay = app.config['LOOP_DELAY']
@@ -170,18 +181,20 @@ class LiftApp:
                     await sock.send(message)
 
     @staticmethod
-    def _response(signal, data, status='ok'):
+    def _response(signal, id, data, status='ok'):
         return ujson.dumps({
             'type': 'response',
             'signal': signal,
+            'id': id,
             'status': status,
             'data': data
         })
 
     @classmethod
-    def _error(cls, signal, code, message):
+    def _error(cls, signal, id,  code, message):
         return cls._response(
             signal,
+            id,
             {'code': code, 'message': message},
             'error'
         )

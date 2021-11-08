@@ -3,6 +3,7 @@ from functools import wraps
 
 from marshmallow import Schema, ValidationError
 from marshmallow import fields
+from marshmallow import validate
 from marshmallow.validate import Range
 from marshmallow_enum import EnumField
 
@@ -14,10 +15,10 @@ ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 def with_schema(schema):
     def decorator(func):
         @wraps(func)
-        def wrapper(self, _, data, *args, **kwargs):
+        def wrapper(self, _, __, data, *args, **kwargs):
             valid_data = schema().load(data)
 
-            return func(self, _, valid_data, *args, **kwargs)
+            return func(self, _, __, valid_data, *args, **kwargs)
 
         return wrapper
     return decorator
@@ -28,6 +29,12 @@ def _validate_iso8601(value):
         dt.strptime(value, ISO8601_FORMAT)
     except ValueError:
         raise ValidationError(f"'{value}' is not correct ISO 8601 value")
+
+
+class IncomingSchema(Schema):
+    signal = fields.Str(required=True)
+    id = fields.Str(default=None, missing=None, allow_none=True, validate=validate.Length(max=32))
+    data = fields.Dict(required=True)
 
 
 class AuthSchema(Schema):
