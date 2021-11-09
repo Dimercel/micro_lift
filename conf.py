@@ -16,6 +16,8 @@ class ConfigSchema(Schema):
     FLOOR_COUNT = fields.Int(required=True)
     FLOOR_HEIGHT = fields.Float(required=True)
     LIFT_COUNT = fields.Int(required=True)
+    LIFT_MAX_WEIGHT = fields.Float(default=300.0, missing=300.0)
+    LIFT_SPEED = fields.Float(default=0.25, missing=0.25)
     LOOP_DELAY = fields.Float(required=True)
     SECRET_KEY = fields.Str(required=True)
 

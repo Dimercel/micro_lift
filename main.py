@@ -22,8 +22,12 @@ def main():
     app.ctx.actors = {}
     app.ctx.lifts = {}
     for inx in range(config['LIFT_COUNT']):
-        app.ctx.lifts[f'lift_{inx}'] = Lift(f'lift_{inx}', 0.25, 300,
-                                            config['FLOOR_HEIGHT'])
+        app.ctx.lifts[f'lift_{inx}'] = Lift(
+            f'lift_{inx}',
+            config['LIFT_SPEED'],
+            config['LIFT_MAX_WEIGHT'],
+            config['FLOOR_HEIGHT']
+        )
 
     app.ctx.sockets = {}
     app.ctx.by_ws = {}
