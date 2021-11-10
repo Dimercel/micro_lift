@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime as dt
+from functools import wraps
 import json
 from json import JSONDecodeError
 
@@ -10,6 +11,24 @@ from auth import is_expired_token, is_valid_auth
 from models import Actor, Lift, ActorStatus, LiftStatus
 from schema import with_schema
 import schema as sc
+
+
+class AuthRequired(Exception):
+    def __init__(self, message='Unauthorized request', *args, **kwargs):
+        super().__init__(message, *args, **kwargs)
+
+
+def auth_required(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        ws = args[-1]
+
+        if self.app.ctx.by_ws.get(ws) is None:
+            raise AuthRequired
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class TokenExpired(Exception):
@@ -71,6 +90,9 @@ class LiftApp:
                     continue
 
                 await handler(signal, id, data['data'], request, ws)
+            except AuthRequired as e:
+                await ws.send(self._error(signal, id, 401, str(e)))
+                continue
             except TokenExpired as e:
                 await ws.send(self._error(signal, id, 403, str(e)))
                 continue
@@ -102,6 +124,7 @@ class LiftApp:
             await ws.send(self._error(signal, id, 403, 'Forbidden request'))
             await ws.close()
 
+    @auth_required
     @with_schema(sc.LiftListSchema)
     async def _lift_list(self, signal, id,  data, req, ws):
         lifts = list(self.app.ctx.lifts.values())
@@ -109,6 +132,7 @@ class LiftApp:
         await ws.send(self._response(
             signal, id, sc.Lift().dump(lifts[:data['count']], many=True)))
 
+    @auth_required
     @with_schema(sc.ActorListSchema)
     async def _actor_list(self, signal, id, data, req, ws):
         actors = list(self.app.ctx.actors.values())
@@ -116,6 +140,7 @@ class LiftApp:
         await ws.send(self._response(
             signal, id, sc.Actor().dump(actors[:data['count']], many=True)))
 
+    @auth_required
     async def _actor_idle(self, signal, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
 
@@ -126,6 +151,7 @@ class LiftApp:
 
         await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
+    @auth_required
     @with_schema(sc.ActorExpectSchema)
     async def _actor_expect(self, signal, id, data, req, ws):
         actor = self.app.ctx.by_ws.get(ws)
