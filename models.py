@@ -112,12 +112,11 @@ class Lift():
 
         return new_passengers
 
-
     def stop(self):
         self._status = LiftStatus.STOPPED
 
     def move_to_act_floor(self, actors):
-        """Перемещает лифт на один шаг к целевому этажу"""
+        """Перемещает лифт на один шаг к ближайшему этажу с посадкой/высадкой"""
 
         near = self.near_act_floor(actors)
         if near is not None:

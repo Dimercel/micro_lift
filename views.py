@@ -102,6 +102,8 @@ class LiftApp:
 
     @with_schema(sc.AuthSchema)
     async def _auth_actor(self, signal, id, data, req, ws):
+        """Аутентифицирует нового актора в сервисе"""
+
         uid = data['uid']
         ctx = self.app.ctx
 
@@ -127,21 +129,25 @@ class LiftApp:
     @auth_required
     @with_schema(sc.LiftListSchema)
     async def _lift_list(self, signal, id,  data, req, ws):
-        lifts = list(self.app.ctx.lifts.values())
+        """Выводит список всех лифтов в здании"""
 
+        lifts = list(self.app.ctx.lifts.values())
         await ws.send(self._response(
             signal, id, sc.Lift().dump(lifts[:data['count']], many=True)))
 
     @auth_required
     @with_schema(sc.ActorListSchema)
     async def _actor_list(self, signal, id, data, req, ws):
-        actors = list(self.app.ctx.actors.values())
+        """Выводит список всех подключенных акторов"""
 
+        actors = list(self.app.ctx.actors.values())
         await ws.send(self._response(
             signal, id, sc.Actor().dump(actors[:data['count']], many=True)))
 
     @auth_required
     async def _actor_idle(self, signal, data, req, ws):
+        """Переводит актора в режим бездействия"""
+
         actor = self.app.ctx.by_ws.get(ws)
 
         # TODO сделать в соответствии с моделью Actor
@@ -154,6 +160,7 @@ class LiftApp:
     @auth_required
     @with_schema(sc.ActorExpectSchema)
     async def _actor_expect(self, signal, id, data, req, ws):
+        """Устанавливает желаемый этаж для поезди актору"""
         actor = self.app.ctx.by_ws.get(ws)
 
         if actor.status != ActorStatus.IN_LIFT:
@@ -162,6 +169,8 @@ class LiftApp:
         await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
     async def lift_loop(self, app):
+        """Петля действий для лифта"""
+
         delay = app.config['LOOP_DELAY']
         actors = app.ctx.actors.values()
 
@@ -200,6 +209,7 @@ class LiftApp:
             await asyncio.sleep(delay)
 
     async def _send_broadcast(self, message, only=None, exclude=[]):
+        """Широковещательная посылка сообщений акторам"""
         uids = self.app.ctx.sockets.keys() if only is None else only
         for uid_item in uids:
             if uid_item not in exclude:
