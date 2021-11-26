@@ -1,14 +1,12 @@
 import asyncio
 from datetime import datetime as dt
 from functools import wraps
-import json
-from json import JSONDecodeError
 
 from marshmallow.exceptions import ValidationError
 import ujson
 
 from auth import is_expired_token, is_valid_auth
-from models import Actor, Lift, ActorStatus, LiftStatus
+from models import Actor, ActorStatus, LiftStatus
 from schema import with_schema
 import schema as sc
 
@@ -72,10 +70,10 @@ class LiftApp:
         while True:
             msg = await ws.recv()
             try:
-                data = json.loads(msg)
+                data = ujson.loads(msg)
                 # Предварительная валидация сообщения в соответствии с протоколом
                 valid_data = sc.IncomingSchema().load(data)
-            except JSONDecodeError as e:
+            except ValueError as e:
                 await ws.send(self._error('invalid', None, 400, str(e)))
                 continue
             except ValidationError as e:
