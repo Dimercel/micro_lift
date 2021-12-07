@@ -103,3 +103,89 @@
     ]
 }
 ```
+
+## actor_idle
+Переводит актора в режим бездействия. В таком режиме актор просто бездействует на этаже.
+
+**Пример ответа:**
+
+```Java Script
+{
+    "type": "response",
+    "signal": "actor_idle",
+    "id": "my_id",
+    "status": "ok",
+    "data": {
+        "status": "IDLE",
+        "need_floor": null,
+        "floor": 1,
+        "weight": 71,
+        "timestamp": "2021-12-07T17:14:45.901134Z",
+        "uid": "user1"
+    }
+}
+```
+
+## actor_expect
+Вызывает лифт для поездки на указанный этаж.
+
+**Параметры:**
+
+* `floor` - номер желаемого этажа для поездки
+
+**Пример ответа:**
+
+```Java Script
+{
+    "type": "response",
+    "signal": "actor_expect",
+    "id": "my_id",
+    "status": "ok",
+    "data": {
+        "weight": 71,
+        "floor": 1,
+        "need_floor": 4,
+        "uid": "user1",
+        "status": "EXPECT",
+        "timestamp": "2021-12-07T17:19:30.944035Z"
+    }
+}
+```
+
+# Уведомления
+
+В процессе работы сервиса актор может получать уведомления. Более подробно об их типах:
+
+## enter_lift
+
+Приходит в момент, когда лифт забирает актора чтобы осуществить поездку на необходимый этаж.
+
+**Пример:**
+
+```Java Script
+{
+    "type": "notify",
+    "event": "enter_lift",
+    "data": {
+        "id": "lift_0",
+        "floor": 1
+    }
+}
+```
+
+## drop_off
+
+Приходит в момент высадки актора на этаже.
+
+**Пример:**
+
+```Java Script
+{
+    "type": "notify",
+    "event": "drop_off",
+    "data": {
+        "id": "lift_0",
+        "floor": 4
+    }
+}
+```
