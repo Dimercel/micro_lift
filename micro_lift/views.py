@@ -143,7 +143,7 @@ class LiftApp:
             signal, id, sc.Actor().dump(actors[:data['count']], many=True)))
 
     @auth_required
-    async def _actor_idle(self, signal, data, req, ws):
+    async def _actor_idle(self, signal, id, data, req, ws):
         """Переводит актора в режим бездействия"""
 
         actor = self.app.ctx.by_ws.get(ws)
@@ -158,7 +158,7 @@ class LiftApp:
     @auth_required
     @with_schema(sc.ActorExpectSchema)
     async def _actor_expect(self, signal, id, data, req, ws):
-        """Устанавливает желаемый этаж для поезди актору"""
+        """Устанавливает желаемый этаж для поездки актору"""
         actor = self.app.ctx.by_ws.get(ws)
 
         if actor.status != ActorStatus.IN_LIFT:
