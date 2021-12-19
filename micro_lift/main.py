@@ -8,15 +8,10 @@ from conf import load_config
 from models import Lift
 from views import LiftApp
 
-app = Sanic("Lift app")
 
-
-def main():
-    parser = argparse.ArgumentParser(description='Lift app')
-    parser.add_argument('--config', type=str, help='Path to configuration yaml file')
-    args = parser.parse_args()
-
-    config = load_config(args.config)
+def init_app(config_path):
+    app = Sanic("Lift app")
+    config = load_config(config_path)
     app.config.update(config)
 
     app.ctx.actors = {}
@@ -36,14 +31,24 @@ def main():
 
     app.add_websocket_route(lift_app.entry_point, '/ws')
     app.add_task(lift_app.lift_loop)
+
+    return app
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Lift app')
+    parser.add_argument('--config', type=str, help='Path to configuration yaml file')
+    args = parser.parse_args()
+
+    app = init_app(args.config)
     app.run(
-        host=config['HOST'],
-        port=config['PORT'],
-        unix=config['UNIX'],
-        debug=config['DEBUG'],
-        sock=config['SOCK'],
-        workers=config['WORKERS'],
-        access_log=config['ACCESS_LOG']
+        host=app.config['HOST'],
+        port=app.config['PORT'],
+        unix=app.config['UNIX'],
+        debug=app.config['DEBUG'],
+        sock=app.config['SOCK'],
+        workers=app.config['WORKERS'],
+        access_log=app.config['ACCESS_LOG']
     )
 
     return 0
