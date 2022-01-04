@@ -1,9 +1,12 @@
 import pytest
 
+from sanic.app import Sanic
 from sanic.websocket import WebSocketProtocol
 
-from main import init_app
+from micro_lift.main import init_app
 
+
+Sanic.test_mode = True
 
 @pytest.fixture
 def cli(loop, sanic_client):
