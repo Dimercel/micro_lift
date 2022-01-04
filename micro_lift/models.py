@@ -203,9 +203,15 @@ class Actor:
     def timestamp(self):
         return self._timestamp
 
+    def idle(self):
+        """Переход в режим бездействия"""
+        if self._status == ActorStatus.EXPECT:
+            self._status = ActorStatus.IDLE
+            self._need_floor = None
+
     def wait_lift(self, floor):
         """Ожидать лифт на текущем этаже"""
-        if floor != self._floor:
+        if self._status != ActorStatus.IN_LIFT and floor != self._floor:
             self._need_floor = floor
             self._status = ActorStatus.EXPECT
 

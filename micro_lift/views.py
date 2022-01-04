@@ -147,11 +147,7 @@ class LiftApp:
         """Переводит актора в режим бездействия"""
 
         actor = self.app.ctx.by_ws.get(ws)
-
-        # TODO сделать в соответствии с моделью Actor
-        if actor.status == ActorStatus.EXPECT:
-            actor['status'] = ActorStatus.IDLE
-            actor['need_floor'] = None
+        actor.idle()
 
         await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
@@ -160,15 +156,12 @@ class LiftApp:
     async def _actor_expect(self, signal, id, data, req, ws):
         """Устанавливает желаемый этаж для поездки актору"""
         actor = self.app.ctx.by_ws.get(ws)
-
-        if actor.status != ActorStatus.IN_LIFT:
-            actor.wait_lift(data['floor'])
+        actor.wait_lift(data['floor'])
 
         await ws.send(self._response(signal, id, sc.Actor().dump(actor)))
 
     async def lift_loop(self, app):
         """Петля действий для лифта"""
-
         delay = app.config['LOOP_DELAY']
         actors = app.ctx.actors.values()
 
