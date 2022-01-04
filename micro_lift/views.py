@@ -102,18 +102,18 @@ class LiftApp:
     async def _auth_actor(self, signal, id, data, req, ws):
         """Аутентифицирует нового актора в сервисе"""
 
-        uid = data['uid']
-        ctx = self.app.ctx
+        uid, ctx = data['uid'], self.app.ctx
+        sockets = ctx.sockets
 
         actor = self.authenticate(data)
         if actor:
             ctx.actors[uid] = actor
             ctx.by_ws[ws] = actor
 
-            if uid in ctx.sockets and ctx.sockets[uid]:
-                ctx.sockets[uid].add(ws)
+            if uid in sockets and sockets[uid]:
+                sockets[uid].add(ws)
             else:
-                ctx.sockets[uid] = {ws}
+                sockets[uid] = {ws}
 
             await self._send_broadcast(
                 self._notify('actor_arrive', sc.Actor().dump(actor)),
