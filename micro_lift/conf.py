@@ -2,6 +2,15 @@ from marshmallow import Schema, fields
 import yaml
 
 
+class FloorSchema(Schema):
+    COUNT = fields.Int(required=True)
+    HEIGHT = fields.Float(required=True)
+
+class LiftSchema(Schema):
+    COUNT = fields.Int(required=True)
+    MAX_WEIGHT = fields.Float(default=300.0, missing=300.0)
+    SPEED = fields.Float(default=0.25, missing=0.25)
+
 class ConfigSchema(Schema):
     HOST = fields.Str(required=True)
     PORT = fields.Int(required=True)
@@ -13,11 +22,8 @@ class ConfigSchema(Schema):
 
     AUTH_TOKEN_DELAY = fields.Int(required=True)
     DATETIME_FORMAT = fields.Str(required=True)
-    FLOOR_COUNT = fields.Int(required=True)
-    FLOOR_HEIGHT = fields.Float(required=True)
-    LIFT_COUNT = fields.Int(required=True)
-    LIFT_MAX_WEIGHT = fields.Float(default=300.0, missing=300.0)
-    LIFT_SPEED = fields.Float(default=0.25, missing=0.25)
+    FLOOR = fields.Nested(FloorSchema, required=True)
+    LIFT = fields.Nested(LiftSchema, required=True)
     LOOP_DELAY = fields.Float(required=True)
     SECRET_KEY = fields.Str(required=True)
 

@@ -16,12 +16,12 @@ def init_app(config_path):
 
     app.ctx.actors = {}
     app.ctx.lifts = {}
-    for inx in range(config['LIFT_COUNT']):
+    for inx in range(config['LIFT']['COUNT']):
         app.ctx.lifts[f'lift_{inx}'] = Lift(
             f'lift_{inx}',
-            config['LIFT_SPEED'],
-            config['LIFT_MAX_WEIGHT'],
-            config['FLOOR_HEIGHT']
+            config['LIFT']['SPEED'],
+            config['LIFT']['MAX_WEIGHT'],
+            config['FLOOR']['HEIGHT']
         )
 
     app.ctx.sockets = {}
