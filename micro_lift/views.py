@@ -103,10 +103,15 @@ class LiftApp:
         """Аутентифицирует нового актора в сервисе"""
 
         uid, ctx = data['uid'], self.app.ctx
+        conf = self.app.config
         sockets = ctx.sockets
 
         actor = self.authenticate(data)
         if actor:
+            if actor.weight > conf['LIFT']['MAX_WEIGHT']:
+                await ws.send(self._error(signal, id, 400, 'Actor overweight!'))
+                return
+
             ctx.actors[uid] = actor
             ctx.by_ws[ws] = actor
 

@@ -41,7 +41,7 @@ class AuthSchema(Schema):
     uid = fields.Str(required=True)
     timestamp = fields.Str(required=True, validate=_validate_iso8601)
     token = fields.Str(required=True)
-    weight = fields.Float(required=True)
+    weight = fields.Float(required=True, validate=validate.Range(min=1.0))
 
 
 class LiftListSchema(Schema):
